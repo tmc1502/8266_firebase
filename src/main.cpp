@@ -14,7 +14,6 @@ FirebaseAuth firebaseAuth;
 
 void setup() {
   Serial.begin(115200);
-  // Serial.swap();  // Use UART1 for Serial communication
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   while (WiFi.status() != WL_CONNECTED) {
@@ -35,23 +34,29 @@ void setup() {
 }
 
 void loop() {
-  // Serial.println(":");
   if (Serial.available() > 0) {
     String data = Serial.readStringUntil('\n');
     data.trim();
-    Serial.println("Received data: " + data); // Debugging statement
-
-    int ledStatus[4];
+    Serial.println("Received data: " + data); 
+    int ledStatus[9];
     sscanf(data.c_str(), "%d,%d,%d,%d", &ledStatus[0], &ledStatus[1], &ledStatus[2], &ledStatus[3]);
 
-    int test = ledStatus[0];
+    int test = ledStatus[9];
     Serial.println(":");
 
       Firebase.setInt(firebaseData, "/A1", ledStatus[0]);
       Firebase.setInt(firebaseData, "/A2", ledStatus[1]);
       Firebase.setInt(firebaseData, "/A3", ledStatus[2]);
       Firebase.setInt(firebaseData, "/A4", ledStatus[3]);
+      Firebase.setInt(firebaseData, "/A5", ledStatus[4]);
+
+      Firebase.setInt(firebaseData, "/B1", ledStatus[5]);
+      Firebase.setInt(firebaseData, "/B2", ledStatus[6]);
+      Firebase.setInt(firebaseData, "/B3", ledStatus[7]);
+      Firebase.setInt(firebaseData, "/B4", ledStatus[8]);
+      Firebase.setInt(firebaseData, "/B5", ledStatus[9]);
+
   }
 
-  delay(500);
+  delay(1000);
 }

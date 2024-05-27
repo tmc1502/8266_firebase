@@ -1,12 +1,12 @@
-
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <FirebaseESP8266.h>
 
-#define WIFI_SSID "311 HHN LAU 2"//chua va odc wiffi
-#define WIFI_PASSWORD "@@1234abcdlau2"
-#define FIREBASE_HOST "test-web-19188-default-rtdb.firebaseio.com"
-#define FIREBASE_AUTH "CYLaYgWBR6pMghRCtCUbaQoDNfMmhLU9N68fcxhu"
+// Wi-Fi and Firebase credentials
+#define WIFI_SSID "311 HHN LAU 2" // Replace with your Wi-Fi SSID
+#define WIFI_PASSWORD "@@1234abcdlau2" // Replace with your Wi-Fi password
+#define FIREBASE_HOST "test-web-19188-default-rtdb.firebaseio.com" // Replace with your Firebase database URL
+#define FIREBASE_AUTH "CYLaYgWBR6pMghRCtCUbaQoDNfMmhLU9N68fcxhu" // Replace with your Firebase authentication token
 
 FirebaseData firebaseData;
 FirebaseConfig firebaseConfig;
@@ -15,6 +15,7 @@ FirebaseAuth firebaseAuth;
 void setup() {
   Serial.begin(115200);
 
+  // Connect to Wi-Fi
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -25,7 +26,7 @@ void setup() {
   Serial.println(WiFi.localIP());
   Serial.println();
 
-  Serial.println(":");
+  // Configure Firebase
   firebaseConfig.host = FIREBASE_HOST;
   firebaseConfig.signer.tokens.legacy_token = FIREBASE_AUTH;
 
@@ -38,25 +39,32 @@ void loop() {
     String data = Serial.readStringUntil('\n');
     data.trim();
     Serial.println("Received data: " + data); 
-    int ledStatus[9];
-    sscanf(data.c_str(), "%d,%d,%d,%d", &ledStatus[0], &ledStatus[1], &ledStatus[2], &ledStatus[3]);
 
-    int test = ledStatus[9];
-    Serial.println(":");
+    int ledStatus[10];
+    sscanf(data.c_str(), "A:%d,%d,%d,%d,%d B:%d,%d,%d,%d,%d", &ledStatus[0], &ledStatus[1], &ledStatus[2], &ledStatus[3], &ledStatus[4], &ledStatus[5], &ledStatus[6], &ledStatus[7], &ledStatus[8], &ledStatus[9]);
 
-      Firebase.setInt(firebaseData, "/A1", ledStatus[0]);
-      Firebase.setInt(firebaseData, "/A2", ledStatus[1]);
-      Firebase.setInt(firebaseData, "/A3", ledStatus[2]);
-      Firebase.setInt(firebaseData, "/A4", ledStatus[3]);
-      Firebase.setInt(firebaseData, "/A5", ledStatus[4]);
+    Serial.println("Updating Firebase...");
 
-      Firebase.setInt(firebaseData, "/B1", ledStatus[5]);
-      Firebase.setInt(firebaseData, "/B2", ledStatus[6]);
-      Firebase.setInt(firebaseData, "/B3", ledStatus[7]);
-      Firebase.setInt(firebaseData, "/B4", ledStatus[8]);
-      Firebase.setInt(firebaseData, "/B5", ledStatus[9]);
+    // Create a JSON object to hold the LED statuses
+    FirebaseJson json;
+    json.set("/A1", ledStatus[0]);
+    json.set("/A2", ledStatus[1]);
+    json.set("/A3", ledStatus[2]);
+    json.set("/A4", ledStatus[3]);
+    json.set("/A5", ledStatus[4]);
+    json.set("/B1", ledStatus[5]);
+    json.set("/B2", ledStatus[6]);
+    json.set("/B3", ledStatus[7]);
+    json.set("/B4", ledStatus[8]);
+    json.set("/B5", ledStatus[9]);
 
+    // Update Firebase in one go
+    if (Firebase.updateNode(firebaseData, "/", json)) {
+      Serial.println("Firebase updated successfully");
+    } else {
+      Serial.println("Error updating Firebase: " + firebaseData.errorReason());
+    }
   }
 
-  delay(1000);
+  delay(500);
 }

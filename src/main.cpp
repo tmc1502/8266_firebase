@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <FirebaseESP8266.h>
+#include <ArduinoJson.h>
 
 // Wi-Fi and Firebase credentials
 #define WIFI_SSID "311 HHN LAU 2" // Replace with your Wi-Fi SSID
@@ -36,30 +37,31 @@ void setup() {
 
 void loop() {
   if (Serial.available() > 0) {
-    String data = Serial.readStringUntil('\n');
-    data.trim();
-    Serial.println("Received data: " + data); 
+    String jsonData = Serial.readStringUntil('\n');
+    jsonData.trim();
+    Serial.println("Received data: " + jsonData); 
 
-    int ledStatus[10];
-    sscanf(data.c_str(), "A:%d,%d,%d,%d,%d B:%d,%d,%d,%d,%d", &ledStatus[0], &ledStatus[1], &ledStatus[2], &ledStatus[3], &ledStatus[4], &ledStatus[5], &ledStatus[6], &ledStatus[7], &ledStatus[8], &ledStatus[9]);
+    // Parse the JSON data
+    StaticJsonDocument<256> jsonDoc;
+    DeserializationError error = deserializeJson(jsonDoc, jsonData);
 
+    if (error) {
+      Serial.print("JSON parsing failed: ");
+      Serial.println(error.f_str());
+      return;
+    }
+
+    JsonObject ledStatus = jsonDoc["ledStatus"];
     Serial.println("Updating Firebase...");
 
-    // Create a JSON object to hold the LED statuses
-    FirebaseJson json;
-    json.set("/A1", ledStatus[0]);
-    json.set("/A2", ledStatus[1]);
-    json.set("/A3", ledStatus[2]);
-    json.set("/A4", ledStatus[3]);
-    json.set("/A5", ledStatus[4]);
-    json.set("/B1", ledStatus[5]);
-    json.set("/B2", ledStatus[6]);
-    json.set("/B3", ledStatus[7]);
-    json.set("/B4", ledStatus[8]);
-    json.set("/B5", ledStatus[9]);
+    // Create a JSON object for Firebase
+    FirebaseJson firebaseJson;
+    for (JsonPair kv : ledStatus) {
+      firebaseJson.set("/" + String(kv.key().c_str()), kv.value().as<int>());
+    }
 
     // Update Firebase in one go
-    if (Firebase.updateNode(firebaseData, "/", json)) {
+    if (Firebase.updateNode(firebaseData, "/", firebaseJson)) {
       Serial.println("Firebase updated successfully");
     } else {
       Serial.println("Error updating Firebase: " + firebaseData.errorReason());
